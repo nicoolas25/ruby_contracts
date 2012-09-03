@@ -5,7 +5,7 @@ $:.push File.expand_path("../lib", __FILE__)
 require 'ruby_contracts/version'
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Nicolas ZERMATI"]
+  gem.authors       = ["nicoolas25"]
   gem.email         = ["nicoolas25@gmail.com"]
   gem.description   = %q{Micro DSL to add pre & post condition to methods. It try to bring some design by contract in the Ruby world.}
   gem.summary       = %q{Micro DSL to add pre & post condition to methods. It try to bring some design by contract in the Ruby world.}
