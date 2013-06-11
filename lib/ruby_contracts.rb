@@ -94,7 +94,7 @@ module Contracts
 
               code << "if !#{contract_method_name}(*__args) then\n"
               code << "  self.class.__contract_failure!('#{name}', \"invalid precondition: #{args[0]}\", nil, *__args)\n"
-              code << "end"
+              code << "end\n"
               code
             else
               code
@@ -116,7 +116,7 @@ module Contracts
 
               code << "if !#{contract_method_name}(result, *__args) then\n"
               code << "  self.class.__contract_failure!('#{name}', \"invalid postcondition: #{args[0]}\", result, *__args)\n"
-              code << "end"
+              code << "end\n"
               code
             else
               code
