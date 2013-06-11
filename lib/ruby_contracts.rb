@@ -3,14 +3,40 @@ require "ruby_contracts/version"
 module Contracts
   class Error < Exception ; end
 
+  def self.empty_contracts
+    {:before => [], :after => []}
+  end
+
   module DSL
     def self.included(base)
       base.extend Contracts::DSL::ClassMethods
+      base.__contracts_initialize
     end
 
     module ClassMethods
-      def self.extended(base)
-        base.instance_eval "@__contracts = {:before => [], :after => []}"
+      def inherited(subclass)
+        super
+        subclass.__contracts_initialize
+      end
+
+      def __contracts_initialize
+        @__contracts = Contracts.empty_contracts
+        @__contracts_for = {}
+      end
+
+      def __contracts_for(name, current_contracts=nil)
+        inherited_contracts = ancestors[1..-1].reduce(Contracts.empty_contracts) do |c, klass|
+          ancestor_hash = klass.instance_variable_get('@__contracts_for') || {}
+          c[:before] += ancestor_hash.has_key?(name) ? ancestor_hash[name][:before] : []
+          c[:after] += ancestor_hash.has_key?(name) ? ancestor_hash[name][:after] : []
+          c
+        end
+        current_contracts = @__contracts_for[name] || current_contracts || Contracts.empty_contracts
+
+        contracts = Contracts.empty_contracts
+        contracts[:before] = current_contracts[:before] + inherited_contracts[:before]
+        contracts[:after] = current_contracts[:after] + inherited_contracts[:after]
+        contracts
       end
 
       def __contract_failure!(name, message, result, *args)
@@ -32,16 +58,18 @@ module Contracts
       end
 
       def method_added(name)
-        if ENV['ENABLE_ASSERTION'] && (!@__contracts[:before].empty? || !@__contracts[:after].empty?)
-          __contracts_copy = @__contracts
-          @__contracts = {:before => [], :after => []}
+        return unless ENV['ENABLE_ASSERTION']
+        return if @__contracts_for.has_key?(name)
 
+        __contracts = @__contracts_for[name] ||= __contracts_for(name, @__contracts)
+        @__contracts = Contracts.empty_contracts
+
+        if !__contracts[:before].empty? || !__contracts[:after].empty?
           original_method_name = "#{name}__with_contracts"
           define_method(original_method_name, instance_method(name))
 
-
           count = 0
-          before_contracts = __contracts_copy[:before].reduce("") do |code, contract|
+          before_contracts = __contracts[:before].reduce("") do |code, contract|
             type, *args = contract
             case type
             when :type
@@ -71,7 +99,7 @@ module Contracts
             end
           end
 
-          after_contracts = __contracts_copy[:after].reduce("") do |code, contract|
+          after_contracts = __contracts[:after].reduce("") do |code, contract|
             type, *args = contract
             case type
             when :type
