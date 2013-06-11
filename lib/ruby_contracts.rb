@@ -58,6 +58,8 @@ module Contracts
       end
 
       def method_added(name)
+        super
+
         return unless ENV['ENABLE_ASSERTION']
         return if @__contracts_for.has_key?(name)
 

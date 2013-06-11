@@ -38,6 +38,14 @@ Run this sample with `ENABLE_ASSERTION=1 bundle exec ruby example.rb`.
 
 Without the environment variable `ENABLE_ASSERTION` you have zero overhead and zero verification.
 
+## Class inheritance
+
+When you inherit a class that contains contracts, all contracts must be satified by the subclass.
+
+If you override a method, you still have to satisfy the existing contracts for this method and you can add some others.
+
+See the [issue #1](https://github.com/nicoolas25/ruby_contracts/issues/1) for an example.
+
 ## Contributing
 
 1. Fork it
