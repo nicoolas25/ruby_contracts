@@ -3,6 +3,13 @@ require "ruby_contracts/version"
 module Contracts
   class Error < Exception ; end
 
+  # When it is used with @__contracts_for:
+  #   before key must contain a disjunction of conjunction with preconditions
+  #   after key must contain a conjunction with postconditions
+  #
+  # When it is used with @__contracts:
+  #   before key must contain a conjunction
+  #   after key must contain a conjunction
   def self.empty_contracts
     {:before => [], :after => []}
   end
@@ -27,16 +34,17 @@ module Contracts
       def __contracts_for(name, current_contracts=nil)
         inherited_contracts = ancestors[1..-1].reduce(Contracts.empty_contracts) do |c, klass|
           ancestor_hash = klass.instance_variable_get('@__contracts_for') || {}
-          c[:before] += ancestor_hash.has_key?(name) ? ancestor_hash[name][:before] : []
-          c[:after] += ancestor_hash.has_key?(name) ? ancestor_hash[name][:after] : []
+          c[:before] << ancestor_hash[name][:before] if ancestor_hash.has_key?(name)
+          c[:after] += ancestor_hash[name][:after] if ancestor_hash.has_key?(name)
           c
         end
-        current_contracts = @__contracts_for[name] || current_contracts || Contracts.empty_contracts
 
-        contracts = Contracts.empty_contracts
-        contracts[:before] = current_contracts[:before] + inherited_contracts[:before]
-        contracts[:after] = current_contracts[:after] + inherited_contracts[:after]
-        contracts
+        if current_contracts
+          inherited_contracts[:before] << current_contracts[:before] unless current_contracts[:before].empty?
+          inherited_contracts[:after] += current_contracts[:after] unless current_contracts[:after].empty?
+        end
+
+        inherited_contracts
       end
 
       def __contract_failure!(name, message, result, *args)
@@ -61,45 +69,55 @@ module Contracts
         super
 
         return unless ENV['ENABLE_ASSERTION']
+        return if @__skip_other_contracts_definitions
         return if @__contracts_for.has_key?(name)
 
         __contracts = @__contracts_for[name] ||= __contracts_for(name, @__contracts)
         @__contracts = Contracts.empty_contracts
 
         if !__contracts[:before].empty? || !__contracts[:after].empty?
+          @__skip_other_contracts_definitions = true
           original_method_name = "#{name}__with_contracts"
           define_method(original_method_name, instance_method(name))
 
           count = 0
-          before_contracts = __contracts[:before].reduce("") do |code, contract|
-            type, *args = contract
-            case type
-            when :type
-              classes = args[0]
-              code << "if __args.size < #{classes.size} then\n"
-              code << "  self.class.__contract_failure!('#{name}', \"need at least #{classes.size} arguments (%i given)\" % [__args.size], nil, *args)\n"
-              code << "else\n"
-              conditions = []
-              classes.each_with_index{ |klass, i| conditions << "__args[#{i}].kind_of?(#{klass})" }
-              code << "  if !(#{conditions.join(' && ')}) then\n"
-              code << "    self.class.__contract_failure!('#{name}', 'input type error', nil, *__args)\n"
-              code << "  end\n"
-              code << "end\n"
-              code
+          before_contracts = __contracts[:before].reduce("__before_contracts_disjunction = []\n") do |code, contracts_disjunction|
+            contracts_conjunction = contracts_disjunction.reduce("__before_contracts_conjunction = []\n") do |code, contract|
+              type, *args = contract
+              case type
+              when :type
+                classes = args[0]
+                code << "if __args.size < #{classes.size} then\n"
+                code << "  __before_contracts_conjunction << ['#{name}', \"need at least #{classes.size} arguments (%i given)\" % [__args.size], nil, *args]\n"
+                code << "else\n"
+                conditions = []
+                classes.each_with_index{ |klass, i| conditions << "__args[#{i}].kind_of?(#{klass})" }
+                code << "  if !(#{conditions.join(' && ')}) then\n"
+                code << "    __before_contracts_conjunction << ['#{name}', 'input type error', nil, *__args]\n"
+                code << "  end\n"
+                code << "end\n"
+                code
 
-            when :params
-              # Define a method that verify the assertion
-              contract_method_name = "__verify_contract_#{name}_in_#{count = count + 1}"
-              define_method(contract_method_name) { |*params| self.instance_exec(*params, &args[1]) }
+              when :params
+                # Define a method that verify the assertion
+                contract_method_name = "__verify_contract_#{name}_in_#{count = count + 1}"
+                define_method(contract_method_name) { |*params| self.instance_exec(*params, &args[1]) }
 
-              code << "if !#{contract_method_name}(*__args) then\n"
-              code << "  self.class.__contract_failure!('#{name}', \"invalid precondition: #{args[0]}\", nil, *__args)\n"
-              code << "end\n"
-              code
-            else
-              code
+                code << "if !#{contract_method_name}(*__args) then\n"
+                code << "  __before_contracts_conjunction << ['#{name}', \"invalid precondition: #{args[0]}\", nil, *__args]\n"
+                code << "end\n"
+                code
+              else
+                code
+              end
             end
+            code << contracts_conjunction
+            code << "__before_contracts_disjunction << __before_contracts_conjunction\n"
+            code
           end
+          before_contracts << "if __before_contracts_disjunction.any?{|conj| !conj.empty?} then\n"
+          before_contracts << "  self.class.__contract_failure!(*__before_contracts_disjunction.first.first)\n"
+          before_contracts << "end\n"
 
           after_contracts = __contracts[:after].reduce("") do |code, contract|
             type, *args = contract
@@ -134,6 +152,8 @@ module Contracts
           EOM
 
           class_eval method
+
+          @__skip_other_contracts_definitions = false
         end
       end
     end
