@@ -42,7 +42,8 @@ Without the environment variable `ENABLE_ASSERTION` you have zero overhead and z
 
 When you inherit a class that contains contracts, all contracts must be satified by the subclass.
 
-If you override a method, you still have to satisfy the existing contracts for this method and you can add some others.
+If you override a method, you still have to satisfy the existing postconditions for this method and you can add some others.
+This means that postconditions groups are AND-ed and preconditions groups are OR-ed by inheritance.
 
 See the [issue #1](https://github.com/nicoolas25/ruby_contracts/issues/1) for an example.
 
