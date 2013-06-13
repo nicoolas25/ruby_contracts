@@ -1,6 +1,6 @@
 # RubyContracts
 
-RubyContracts is a small DSL to add pre & post condition to methods. It try to bring some design by contract in the Ruby world.
+RubyContracts is a small DSL to add pre & post condition to methods. It tries to bring some design by contract in the Ruby world.
 
 ## Installation
 

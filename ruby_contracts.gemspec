@@ -7,8 +7,8 @@ require 'ruby_contracts/version'
 Gem::Specification.new do |gem|
   gem.authors       = ["nicoolas25"]
   gem.email         = ["nicoolas25@gmail.com"]
-  gem.description   = %q{Micro DSL to add pre & post condition to methods. It try to bring some design by contract in the Ruby world.}
-  gem.summary       = %q{Micro DSL to add pre & post condition to methods. It try to bring some design by contract in the Ruby world.}
+  gem.description   = %q{Micro DSL to add pre & post condition to methods. It tries to bring some design by contract in the Ruby world.}
+  gem.summary       = %q{Micro DSL to add pre & post condition to methods. It tries to bring some design by contract in the Ruby world.}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($\)
