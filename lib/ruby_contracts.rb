@@ -34,7 +34,7 @@ module Contracts
       def __contracts_for(name, current_contracts=nil)
         inherited_contracts = ancestors[1..-1].reduce(Contracts.empty_contracts) do |c, klass|
           ancestor_hash = klass.instance_variable_get('@__contracts_for') || {}
-          c[:before] << ancestor_hash[name][:before] if ancestor_hash.has_key?(name)
+          c[:before] += ancestor_hash[name][:before] if ancestor_hash.has_key?(name)
           c[:after] += ancestor_hash[name][:after] if ancestor_hash.has_key?(name)
           c
         end
@@ -115,8 +115,8 @@ module Contracts
             code << "__before_contracts_disjunction << __before_contracts_conjunction\n"
             code
           end
-          before_contracts << "if __before_contracts_disjunction.any?{|conj| !conj.empty?} then\n"
-          before_contracts << "  self.class.__contract_failure!(*__before_contracts_disjunction.first.first)\n"
+          before_contracts << "unless __before_contracts_disjunction.any?{|conj| conj.empty?} then\n"
+          before_contracts << "  self.class.__contract_failure!(*__before_contracts_disjunction.find{|conj| !conj.empty?}.first)\n"
           before_contracts << "end\n"
 
           after_contracts = __contracts[:after].reduce("") do |code, contract|
@@ -124,7 +124,7 @@ module Contracts
             case type
             when :type
               code << "if !result.kind_of?(#{args[0]}) then\n"
-              code << "self.class.__contract_failure!(name, \"result must be a kind of '#{args[0]}' not '%s'\" % [result.class.to_s], result, *__args)\n"
+              code << "  self.class.__contract_failure!(name, \"result must be a kind of '#{args[0]}' not '%s'\" % [result.class.to_s], result, *__args)\n"
               code << "end\n"
               code
             when :result
