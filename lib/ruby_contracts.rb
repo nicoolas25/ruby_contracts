@@ -87,13 +87,15 @@ module Contracts
               case type
               when :type
                 classes = args[0]
-                code << "if __args.size < #{classes.size} then\n"
-                code << "  __before_contracts_conjunction << ['#{name}', \"need at least #{classes.size} arguments (%i given)\" % [__args.size], nil, *args]\n"
-                code << "else\n"
+                code << "if __before_contracts_conjunction.empty? then\n"
+                code << "  if __args.size < #{classes.size} then\n"
+                code << "    __before_contracts_conjunction << ['#{name}', \"need at least #{classes.size} arguments (%i given)\" % [__args.size], nil, *args]\n"
+                code << "  else\n"
                 conditions = []
                 classes.each_with_index{ |klass, i| conditions << "__args[#{i}].kind_of?(#{klass})" }
-                code << "  if !(#{conditions.join(' && ')}) then\n"
-                code << "    __before_contracts_conjunction << ['#{name}', 'input type error', nil, *__args]\n"
+                code << "    if !(#{conditions.join(' && ')}) then\n"
+                code << "      __before_contracts_conjunction << ['#{name}', 'input type error', nil, *__args]\n"
+                code << "    end\n"
                 code << "  end\n"
                 code << "end\n"
                 code
@@ -103,8 +105,10 @@ module Contracts
                 contract_method_name = "__verify_contract_#{name}_in_#{count = count + 1}"
                 define_method(contract_method_name) { |*params| self.instance_exec(*params, &args[1]) }
 
-                code << "if !#{contract_method_name}(*__args) then\n"
-                code << "  __before_contracts_conjunction << ['#{name}', \"invalid precondition: #{args[0]}\", nil, *__args]\n"
+                code << "if __before_contracts_conjunction.empty? then\n"
+                code << "  if !#{contract_method_name}(*__args) then\n"
+                code << "    __before_contracts_conjunction << ['#{name}', \"invalid precondition: #{args[0]}\", nil, *__args]\n"
+                code << "  end\n"
                 code << "end\n"
                 code
               else
