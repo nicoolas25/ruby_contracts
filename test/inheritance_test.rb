@@ -35,6 +35,15 @@ describe 'the contracts behavior in an inheritance context' do
           child.increment(3)
           proc { child.increment(2) }.must_raise Contracts::Error
         end
+
+        it 'fails with the deepest failing precondition message' do
+          begin
+            child.increment(2)
+            true.must_equal false # Force a failure
+          rescue Contracts::Error
+            $!.message.must_include 'n >= minimum_incr'
+          end
+        end
       end
     end
   end
