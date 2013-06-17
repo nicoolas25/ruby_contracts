@@ -35,3 +35,9 @@ class ChildWithAddedPrecondition < Parent
     @value += n
   end
 end
+
+class ChildWithSuper < Parent
+  def increment(n)
+    super
+  end
+end

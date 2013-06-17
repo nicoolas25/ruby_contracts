@@ -46,5 +46,13 @@ describe 'the contracts behavior in an inheritance context' do
         end
       end
     end
+
+    describe 'the super keyword usage' do
+      let(:child) { ChildWithSuper.new(10, 3) }
+
+      it 'does not raise any error' do
+        child.increment(5).wont_be_nil
+      end
+    end
   end
 end
