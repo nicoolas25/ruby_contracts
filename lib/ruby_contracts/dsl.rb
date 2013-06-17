@@ -60,23 +60,16 @@ module Contracts
         __contracts = __contracts_for(name.to_s, @__contracts)
         @__contracts = Contracts::List.new
 
-        if !__contracts.empty?
+        if !__contracts.first.empty?
           @__skip_other_contracts_definitions = true
-          original_method_name = "#{name}_without_contracts"
-          define_method(original_method_name, instance_method(name))
-
-          method = <<-EOM
-            def #{name}(*args, &block)
-              __args = block.nil? ? args : args + [block]
-              self.class.__eval_before_contracts("#{name}", self, __args)
-              result = #{original_method_name}(*args, &block)
-              self.class.__eval_after_contracts("#{name}", self, __args, result)
-              return result
-            end
-          EOM
-
-          class_eval method
-
+          original_method = instance_method(name)
+          define_method(name) do |*args, &block|
+            __args = block.nil? ? args : args + [block]
+            self.class.__eval_before_contracts(name.to_s, self, __args)
+            result = original_method.bind(self).(*args, &block)
+            self.class.__eval_after_contracts(name.to_s, self, __args, result)
+            return result
+          end
           @__skip_other_contracts_definitions = false
         end
       end

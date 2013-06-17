@@ -15,11 +15,11 @@ class Parent
   pre  "n > minimum_incr" do |n| n > minimum_incr end
   post "value == old value + n" do "[dummy]" end
   def increment(n)
-    value += n
+    @value += n
   end
 
   def to_s
-    value.to_s
+    @value.to_s
   end
 end
 
