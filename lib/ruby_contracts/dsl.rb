@@ -9,6 +9,10 @@ module Contracts
       end
     end
 
+    def implies(arg1, arg2)
+      ! arg1 || arg2
+    end
+
     module ClassMethods
       def inherited(subclass)
         super

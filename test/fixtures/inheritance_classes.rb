@@ -41,3 +41,19 @@ class ChildWithSuper < Parent
     super
   end
 end
+
+# 'implies' test:
+class ChildWithImpossiblePostcondition < Parent
+  post "impossible" do |result, n| implies(n >= 0, value < 0) end
+  def increment(n)
+    @value += n
+  end
+end
+
+# 'implies' test:
+class ChildWithReasonablePostcondition < Parent
+  post "result-gt-0" do |result, n| implies(n > 0, value > n) end
+  def increment(n)
+    @value += n
+  end
+end
