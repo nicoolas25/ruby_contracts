@@ -56,27 +56,4 @@ describe 'the contracts behavior in an inheritance context' do
       end
     end
   end
-
-  describe 'the redifinition of an existing method with postcondition' do
-    describe 'the child specifies unsatisfiable postconditions' do
-      let(:child) { ChildWithImpossiblePostcondition.new(10, 3) }
-      it 'fails with an unsatisfiable postcondition' do
-        begin
-          child.increment(4)
-          true.must_equal false # Force a failure
-        rescue Contracts::Error
-          $!.message.must_match /postcondition.*impossible/
-        end
-      end
-    end
-
-    describe 'the child specifies a satisfiable postcondition' do
-      let(:child) { ChildWithReasonablePostcondition.new(10, 3) }
-      it 'succeeds with an reasonable postcondition' do
-#        child.increment(3) # Exposes bug: postcondition masks precondition
-        child.increment(4)
-      end
-    end
-  end
-
 end
