@@ -81,9 +81,10 @@ module Contracts
       def __eval_before_contracts(name, context, arguments)
         last_failure_msg = nil
         __contracts_for(name).each do |contracts|
-          next if contracts.empty?
+          before_contracts = contracts.before_contracts
+          next if before_contracts.empty?
           success = true
-          contracts.before_contracts.each do |contract|
+          before_contracts.each do |contract|
             begin
               unless satisfied = contract.satisfied?(context, arguments)
                 last_failure_msg = contract.message
@@ -104,8 +105,9 @@ module Contracts
 
       def __eval_after_contracts(name, context, arguments, result)
         __contracts_for(name).each do |contracts|
-          next if contracts.empty?
-          contracts.after_contracts.each do |contract|
+          after_contracts = contracts.after_contracts
+          next if after_contracts.empty?
+          after_contracts.each do |contract|
             begin
               unless satisfied = contract.satisfied?(context, arguments, result)
               __contract_failure!(name, contract.message, result, arguments)
