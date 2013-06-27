@@ -12,7 +12,7 @@ class Parent
 
   type :in => [Numeric], :out => Numeric
   pre  "n > minimum_incr" do |n| n > minimum_incr end
-  post "value == old value + n" do "[dummy]" end
+  post "result >= n" do |result, n| result >= n  end
   def increment(n)
     @value += n
   end
@@ -30,6 +30,13 @@ end
 
 class ChildWithAddedPrecondition < Parent
   pre "n >= minimum_incr" do |n| n >= minimum_incr end
+  def increment(n)
+    @value += n
+  end
+end
+
+class ChildWithAddedPostcondition < Parent
+  post "true" do true end
   def increment(n)
     @value += n
   end
