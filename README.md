@@ -1,5 +1,7 @@
 # RubyContracts
 
+<a href="http://twitter.com/nicoolas25"><img src="http://www.pairprogramwith.me/assets/badge.svg" style="height:40px" title="We can pair on this!" /></a>
+
 RubyContracts is a small DSL to add pre & post condition to methods. It tries to bring some design by contract in the Ruby world.
 
 ## Installation
